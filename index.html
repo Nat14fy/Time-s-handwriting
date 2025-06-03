@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寻光园</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+            font-family: 'Arial', sans-serif;
+            cursor: url('shovel.png'), auto;
+        }
+        
+        .quote-top {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #333;
+            font-style: italic;
+            max-width: 300px;
+            line-height: 1.6;
+            letter-spacing: 0.5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .quote-bottom {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 400;
+            color: #333;
+            font-style: italic;
+            max-width: 300px;
+            line-height: 1.6;
+            letter-spacing: 0.5px;
+            text-align: right;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            cursor: default;
+        }
+        
+        #garden {
+            width: 70vw;
+            height: 90vh;
+            max-width: 1500px;
+            max-height: 1000px;
+            background-image: url('Garden final.jpg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            position: relative;
+            cursor: url('shovel.png'), pointer;
+            border: 2px solid #ccc;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        
+        .flower-animation {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            overflow: hidden;
+        }
+        
+        .animation-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        #audioControl {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 20px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        
+        #audioControl:hover {
+            background: rgba(255,255,255,0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="quote-top">Every bloom and wither is the work of time.</div>
+    
+    <div id="garden"></div>
+    
+    <div class="quote-bottom">Time will take away everything.</div>
+    
+    <div id="audioControl"><span>🔇</span> 音效</div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const garden = document.getElementById('garden');
+            const audioControl = document.getElementById('audioControl');
+            const audioIcon = audioControl.querySelector('span');
+            
+            // 创建音频元素
+            const bgAudio = new Audio('Park Sound.mp3');
+            bgAudio.loop = true;
+            bgAudio.volume = 0.7; // 设置较低音量
+            
+            let audioEnabled = false;
+            
+            // 音效控制
+            audioControl.addEventListener('click', function() {
+                audioEnabled = !audioEnabled;
+                
+                if (audioEnabled) {
+                    bgAudio.play().catch(e => {
+                        console.log("播放失败；", e);
+                        audioEnabled = false;
+                    });
+                    audioIcon.textContent = '🔊';
+                } else {
+                    bgAudio.pause();
+                    audioIcon.textContent = '🔇';
+                }
+            });
+            
+            // 预加载铲子光标图片
+            const cursorImg = new Image();
+            cursorImg.src = 'shovel.png';
+            
+            // 设置2分钟自动刷新（120000毫秒）
+            setTimeout(() => {
+                window.location.reload();
+            }, 120000);
+            
+            // 动画配置
+            const animations = {
+                bloom: {
+                    url: 'bloom.gif',
+                    duration: 3000,
+                    loopCount: 1
+                },
+                wither: {
+                    url: 'wither.gif',
+                    duration: 10000,
+                    loopCount: 1
+                }
+            };
+            
+            // 预加载图片
+            Object.values(animations).forEach(anim => {
+                const img = new Image();
+                img.src = anim.url;
+            });
+            
+            garden.addEventListener('click', function(e) {
+                const rect = garden.getBoundingClientRect();
+                const clickY = e.clientY - rect.top;
+                const gardenHeight = rect.height;
+                
+                if (clickY > gardenHeight * 0.4) {
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    createAnimation(x, y);
+                }
+            });
+            
+            function createAnimation(x, y) {
+                const animContainer = document.createElement('div');
+                animContainer.className = 'flower-animation';
+                animContainer.style.left = `${x}px`;
+                animContainer.style.top = `${y}px`;
+                garden.appendChild(animContainer);
+                
+                playGifAnimation(animContainer, animations.bloom, () => {
+                    setTimeout(() => {
+                        playGifAnimation(animContainer, animations.wither, () => {});
+                    }, 10000);
+                });
+            }
+            
+            function playGifAnimation(container, animConfig, onComplete) {
+                const img = document.createElement('img');
+                img.className = 'animation-img';
+                img.src = animConfig.url + '?t=' + Date.now();
+                
+                container.innerHTML = '';
+                container.appendChild(img);
+                
+                setTimeout(onComplete, animConfig.duration);
+            }
+        });
+    </script>
+</body>
+</html>
